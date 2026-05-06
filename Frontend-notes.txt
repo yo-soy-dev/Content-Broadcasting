@@ -1,0 +1,84 @@
+FRONTEND NOTES — EduBroadcast Content Broadcasting System
+==========================================================
+
+1. PROJECT STRUCTURE
+--------------------
+The project follows a feature-based folder structure:
+
+- app/          → Next.js App Router pages grouped by role
+                  (auth), (teacher), (principal), live/[teacherId]
+- components/   → Divided by role: teacher/, principal/, shared/, layout/, ui/
+- services/     → All API calls go through service layer only
+- hooks/        → Custom hooks wrap services and manage loading/error/data state
+- context/      → AuthContext handles global user state and token
+- types/        → TypeScript interfaces for Content and User
+- constants/    → Static data like SCREEN_OPTIONS and SUBJECTS (hardcoded)
+- utils/        → Pure helper functions (no API calls)
+- lib/          → axios instance and React Query client config
+
+2. AUTHENTICATION FLOW
+----------------------
+- User submits login form → authService.login() is called
+- JWT token received → stored in localStorage
+- axios interceptor attaches token to every request automatically
+- On 401 response → token cleared → user redirected to /login
+- AuthContext calls getMe() on mount to rehydrate session
+- AuthGuard component protects all role-based routes
+
+3. ROLE-BASED ROUTING
+---------------------
+- After login, user role is checked from API response
+- Teacher → redirected to /teacher/dashboard
+- Principal → redirected to /principal/dashboard
+- AuthGuard checks allowedRoles prop and redirects if mismatch
+- Public route /live/:teacherId requires no authentication
+- Route groups (teacher) and (principal) have separate layouts
+
+4. API INTEGRATION APPROACH
+---------------------------
+- All API calls go through services/ folder only
+  - auth.service.ts     → login, logout, getMe
+  - content.service.ts  → upload, getAll, getMyContent, getLiveContent
+  - approval.service.ts → getPending, approve, reject, getStats
+- Components NEVER call axios directly
+- axios instance in lib/axios.ts handles:
+  - Base URL from environment variable
+  - Token attachment via request interceptor
+  - 401 auto-logout via response interceptor
+
+5. STATE MANAGEMENT
+-------------------
+- React Query (TanStack Query) for server state
+  - Automatic caching, background refetch, loading/error states
+- AuthContext for global user/token state
+- Local useState for UI state (filters, search, modal open/close)
+- No Redux or Zustand used — React Query handles all async state
+
+6. SCREEN SELECTION
+-------------------
+- Screen options are hardcoded in constants/formOptions.ts
+- Reason: screens are fixed physical displays in a school
+  They do not change at runtime, so a static list is the
+  correct and simplest approach (no extra API needed)
+- SCREEN_OPTIONS array is shared across UploadForm and HomePage
+
+7. ASSUMPTIONS
+--------------
+- JWT token stored in localStorage (acceptable for this scope)
+- File uploads limited to JPG, PNG, GIF — max 10MB
+- Cloudinary used for file storage (not local disk)
+- Screen is a string field on Content model (not a separate collection)
+- Subjects are static (Mathematics, Science, English, etc.)
+- Live page polls via React Query refetchInterval (no WebSocket)
+- Content is "active" if: status=approved AND now is between startTime and endTime
+- Only pending content can be deleted by teacher
+- Only pending content can be approved/rejected by principal
+
+8. PERFORMANCE
+--------------
+- React Query caching prevents unnecessary API calls
+- Skeleton loaders shown during data fetch
+- Images use object-cover with fixed dimensions to prevent layout shift
+- Debounced search input (400ms) to reduce API calls
+- Pagination supported on backend (page + limit params)
+- Mobile-responsive: card layout on small screens, table on desktop

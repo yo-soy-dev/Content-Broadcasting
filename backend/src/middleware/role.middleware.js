@@ -1,0 +1,10 @@
+import { ApiError } from '../utils/apiResponse.js';
+
+export const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      throw new ApiError(403, `Role '${req.user.role}' is not allowed to access this route`);
+    }
+    next();
+  };
+};
