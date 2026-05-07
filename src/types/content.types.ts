@@ -11,6 +11,7 @@ export interface Content {
   fileUrl: string;
   filePublicId: string;
   fileType: FileType;
+  fileSize?: number;
 
   startTime: string; 
   endTime: string;   
