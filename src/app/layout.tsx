@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Content Broadcasting System",
-  description: "Educational content broadcasting platform",
+  title: "PulseBoard",
+  description: "Smart Campus Broadcasting Platform",
 };
 
 export default function RootLayout({
