@@ -21,7 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/approval', approvalRoutes);
 app.use("/api/live", liveRoutes);
-app.use("/apu/screen", screenRoutes);
+app.use("/api/screen", screenRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
