@@ -50,7 +50,7 @@ export default function Sidebar({ role }: SidebarProps) {
             <BookOpen size={18} className="text-white" />
           </div>
           <span className="text-base font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            EduBroadcast
+            PulseBoard
           </span>
         </div>
         {/* Close button — sirf mobile pe */}
