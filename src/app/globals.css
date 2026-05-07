@@ -26,7 +26,7 @@ body {
 }
 
 /* ─────────────────────────────
-   Selection
+   Text Selection
 ───────────────────────────── */
 ::selection {
   @apply bg-violet-600 text-white;
@@ -45,7 +45,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 dark:bg-gray-700 rounded-full;
+  @apply rounded-full bg-slate-300 dark:bg-gray-700;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -86,8 +86,7 @@ body {
 
 .badge {
   @apply inline-flex items-center rounded-full
-         px-2.5 py-1
-         text-xs font-medium;
+         px-2.5 py-1 text-xs font-medium;
 }
 
 .btn {
