@@ -80,7 +80,7 @@ export default function HomePage() {
 
           <div>
             <h1 className="text-white font-semibold text-lg tracking-tight">
-              EduBroadcast
+              PulseBoard
             </h1>
 
             <p className="text-green-300/60 text-xs">
