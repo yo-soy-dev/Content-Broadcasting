@@ -6,45 +6,46 @@ import { useLiveContent } from "@/hooks/useContent";
 import { isContentActive } from "@/utils/statusHelpers";
 import { Content } from "@/types/content.types";
 
+/* ───────── Loading ───────── */
 function LoadingScreen() {
   return (
-    <div className="h-screen w-full bg-gray-950 flex flex-col items-center justify-center gap-4">
+    <div className="h-screen w-full bg-[#071a12] flex flex-col items-center justify-center gap-4">
       <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-2 border-teal-500/20" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent
-          border-t-teal-400 animate-spin" />
+        <div className="absolute inset-0 rounded-full border-2 border-green-500/20" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-green-400 animate-spin" />
       </div>
-      <p className="text-teal-400/70 text-sm font-medium tracking-widest uppercase">
+      <p className="text-green-300/70 text-sm font-medium tracking-widest uppercase">
         Loading Broadcast
       </p>
     </div>
   );
 }
 
+/* ───────── Error ───────── */
 function ErrorScreen() {
   return (
-    <div className="h-screen w-full bg-gray-950 flex flex-col items-center
-      justify-center gap-6">
-      <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20
-        flex items-center justify-center">
+    <div className="h-screen w-full bg-[#071a12] flex flex-col items-center justify-center gap-6">
+      <div className="w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="1.5" className="text-red-400/50">
+          stroke="currentColor" strokeWidth="1.5" className="text-red-400/60">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
           <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
       </div>
+
       <div className="text-center">
         <p className="text-white/80 font-semibold text-lg">Broadcast Unavailable</p>
         <p className="text-white/30 text-sm mt-1">
-          Could not load content. Try refreshing.
+          Could not load content. Try again.
         </p>
       </div>
+
       <button
         onClick={() => window.location.reload()}
         className="px-4 py-2 text-xs font-semibold rounded-xl
-          bg-white/5 border border-white/10 text-white/50
-          hover:bg-white/10 hover:text-white/70 transition"
+        bg-green-500/10 border border-green-500/20 text-green-300
+        hover:bg-green-500/20 transition"
       >
         Refresh
       </button>
@@ -52,27 +53,28 @@ function ErrorScreen() {
   );
 }
 
+/* ───────── Empty ───────── */
 function EmptyScreen() {
   return (
-    <div className="h-screen w-full bg-gray-950 flex flex-col items-center
-      justify-center gap-6">
-      <div className="w-20 h-20 rounded-2xl bg-teal-500/10 border border-teal-500/20
-        flex items-center justify-center">
+    <div className="h-screen w-full bg-[#071a12] flex flex-col items-center justify-center gap-6">
+      <div className="w-20 h-20 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="1.5" className="text-teal-400/50">
+          stroke="currentColor" strokeWidth="1.5" className="text-green-400/60">
           <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
       </div>
+
       <div className="text-center">
         <p className="text-white/80 font-semibold text-lg">No Live Content</p>
-        <p className="text-white/30 text-sm mt-1">No active broadcast at this time</p>
+        <p className="text-white/30 text-sm mt-1">No active broadcast now</p>
       </div>
+
       <div className="flex gap-1.5">
         {[0, 1, 2].map(i => (
           <div
             key={i}
-            className="w-1.5 h-1.5 rounded-full bg-teal-500/40 animate-pulse"
+            className="w-1.5 h-1.5 rounded-full bg-green-400/40 animate-pulse"
             style={{ animationDelay: `${i * 0.2}s` }}
           />
         ))}
@@ -81,11 +83,13 @@ function EmptyScreen() {
   );
 }
 
+/* ───────── Main ───────── */
 export default function LivePage() {
   const params = useParams();
   const screenName = decodeURIComponent(params.screenId as string);
 
   const { data, isLoading, isError } = useLiveContent(screenName);
+
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -96,28 +100,32 @@ export default function LivePage() {
 
   const duration = (activeContent[index]?.rotationDuration ?? 10) * 1000;
 
-  // Auto rotate
+  /* auto rotate */
   useEffect(() => {
     if (activeContent.length === 0) return;
     setProgress(0);
+
     const interval = setInterval(() => {
       setIndex(prev => (prev + 1) % activeContent.length);
       setProgress(0);
     }, duration);
+
     return () => clearInterval(interval);
   }, [activeContent.length, index, duration]);
 
-  // Progress bar
+  /* progress */
   useEffect(() => {
     if (activeContent.length === 0) return;
+
     const step = 100 / (duration / 100);
+
     const timer = setInterval(() => {
       setProgress(p => Math.min(p + step, 100));
     }, 100);
+
     return () => clearInterval(timer);
   }, [index, duration, activeContent.length]);
 
-  // ✅ Alag alag screens
   if (isLoading) return <LoadingScreen />;
   if (isError) return <ErrorScreen />;
   if (activeContent.length === 0) return <EmptyScreen />;
@@ -125,70 +133,65 @@ export default function LivePage() {
   const current = activeContent[index];
 
   return (
-    <div className="h-screen w-full bg-gray-950 flex flex-col overflow-hidden relative">
+    <div className="h-screen w-full bg-[#071a12] flex flex-col overflow-hidden relative">
 
       {/* Progress bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/5 z-50">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-green-500/10">
         <div
-          className="h-full bg-teal-400 transition-all duration-100 ease-linear"
+          className="h-full bg-green-400 transition-all duration-100"
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 z-10">
+      <div className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-          <span className="text-white/50 text-xs font-semibold tracking-widest uppercase">
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-green-300/60 text-xs uppercase tracking-widest">
             Live Broadcast
           </span>
         </div>
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10
-          rounded-full px-3 py-1.5">
-          <span className="text-white/40 text-xs">{index + 1}</span>
-          <span className="text-white/20 text-xs">/</span>
-          <span className="text-white/40 text-xs">{activeContent.length}</span>
+
+        <div className="bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1.5">
+          <span className="text-green-300 text-xs">
+            {index + 1} / {activeContent.length}
+          </span>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-8 pb-8">
         <div className="w-full max-w-5xl">
 
-          <div className="relative rounded-2xl overflow-hidden border border-white/10
-            bg-white/5 shadow-2xl mb-8" style={{ minHeight: 380 }}>
+          <div className="rounded-2xl overflow-hidden border border-green-500/20 bg-green-950/30 mb-8">
             <img
               key={current._id}
               src={current.fileUrl}
               alt={current.title}
               className="w-full max-h-[55vh] object-contain animate-fade"
             />
-            <div className="absolute inset-0 ring-1 ring-inset ring-teal-500/10
-              rounded-2xl pointer-events-none" />
           </div>
 
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-teal-400 text-xs font-semibold tracking-widest
-                uppercase mb-2">
+              <p className="text-green-400 text-xs uppercase tracking-widest mb-2">
                 {current.subject}
               </p>
-              <h1 className="text-white text-2xl md:text-4xl font-bold leading-tight">
+
+              <h1 className="text-white text-2xl md:text-4xl font-bold">
                 {current.title}
               </h1>
+
               {current.description && (
-                <p className="text-white/40 text-sm mt-2 max-w-xl">
+                <p className="text-white/40 text-sm mt-2">
                   {current.description}
                 </p>
               )}
             </div>
 
-            <div className="shrink-0 ml-6 bg-white/5 border border-white/10
-              rounded-xl px-4 py-2 text-right">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">
-                Screen
-              </p>
-              <p className="text-white/70 text-sm font-semibold mt-0.5">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2">
+              <p className="text-green-300 text-xs uppercase">Screen</p>
+              <p className="text-white text-sm font-semibold">
                 {current.screen ?? "—"}
               </p>
             </div>
@@ -196,7 +199,7 @@ export default function LivePage() {
         </div>
       </div>
 
-      {/* Dots */}
+      {/* dots */}
       {activeContent.length > 1 && (
         <div className="flex justify-center gap-2 pb-6">
           {activeContent.map((item, i) => (
@@ -205,14 +208,13 @@ export default function LivePage() {
               onClick={() => { setIndex(i); setProgress(0); }}
               className={`rounded-full transition-all duration-300
                 ${i === index
-                  ? "w-6 h-2 bg-teal-400"
-                  : "w-2 h-2 bg-white/20 hover:bg-white/40"
+                  ? "w-6 h-2 bg-green-400"
+                  : "w-2 h-2 bg-green-500/20"
                 }`}
             />
           ))}
         </div>
       )}
-
     </div>
   );
 }
