@@ -3,15 +3,48 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ─────────────────────────────
+   Dynamic Color Safelist
+───────────────────────────── */
+@layer utilities {
+  .safelist-colors {
+    @apply
+      /* Indigo */
+      bg-indigo-50 bg-indigo-100 bg-indigo-500 bg-indigo-600
+      text-indigo-600 text-indigo-700
+      border-indigo-100 shadow-indigo-200
+
+      /* Red */
+      bg-red-50 bg-red-100 bg-red-500 bg-red-600
+      text-red-500 text-red-600 text-red-700
+      border-red-100 border-red-200 shadow-red-200
+
+      /* Violet */
+      bg-violet-50 bg-violet-100 bg-violet-600 bg-violet-700
+      text-violet-600 text-violet-700
+      border-violet-100 shadow-violet-200
+
+      /* Amber */
+      bg-amber-50
+      text-amber-500 text-amber-700
+      border-amber-100
+
+      /* Emerald */
+      bg-emerald-50
+      text-emerald-500 text-emerald-700
+      border-emerald-100
+
+      /* Gray */
+      bg-gray-100
+      text-gray-500 text-gray-800
+      border-gray-200;
+  }
+}
+
+/* ─────────────────────────────
    Base
 ───────────────────────────── */
 html {
-  color-scheme: light;
   scroll-behavior: smooth;
-}
-
-html.dark {
-  color-scheme: dark;
 }
 
 html,
@@ -23,13 +56,6 @@ body {
   @apply bg-slate-50 dark:bg-gray-950
          text-gray-900 dark:text-gray-100
          antialiased transition-colors duration-300;
-}
-
-/* ─────────────────────────────
-   Text Selection
-───────────────────────────── */
-::selection {
-  @apply bg-violet-600 text-white;
 }
 
 /* ─────────────────────────────
@@ -63,119 +89,21 @@ body {
          placeholder:text-gray-400 dark:placeholder:text-gray-500
          outline-none transition-all duration-200
          focus:border-violet-400
-         focus:ring-4 focus:ring-violet-500/20;
-}
-
-.textarea {
-  @apply input min-h-28 resize-none;
-}
-
-.select {
-  @apply input cursor-pointer;
-}
-
-.card {
-  @apply rounded-2xl border border-gray-200 dark:border-gray-800
-         bg-white dark:bg-gray-900
-         shadow-sm transition-all duration-200;
+         focus:ring-2 focus:ring-violet-500/30;
 }
 
 .error {
   @apply text-xs font-medium text-red-500;
 }
 
-.badge {
-  @apply inline-flex items-center rounded-full
-         px-2.5 py-1 text-xs font-medium;
-}
-
-.btn {
-  @apply inline-flex items-center justify-center gap-2
-         rounded-xl px-4 py-2.5
-         text-sm font-medium
-         transition-all duration-200
-         disabled:cursor-not-allowed
-         disabled:opacity-50;
-}
-
 .btn-primary {
-  @apply btn bg-violet-600 text-white
+  @apply rounded-xl bg-violet-600
+         px-4 py-2.5
+         text-sm font-medium text-white
+         transition-all duration-150
          hover:bg-violet-700
          active:scale-[0.98]
-         shadow-lg shadow-violet-500/20
-         dark:shadow-violet-900/40;
-}
-
-.btn-secondary {
-  @apply btn border border-gray-200 dark:border-gray-700
-         bg-white dark:bg-gray-800
-         text-gray-700 dark:text-gray-200
-         hover:bg-gray-50 dark:hover:bg-gray-700;
-}
-
-.btn-danger {
-  @apply btn bg-red-600 text-white
-         hover:bg-red-700
-         active:scale-[0.98];
-}
-
-/* ─────────────────────────────
-   Dynamic Color Safelist
-───────────────────────────── */
-@layer utilities {
-  .safelist-colors {
-    @apply
-      /* Indigo */
-      bg-indigo-50 bg-indigo-100 bg-indigo-500 bg-indigo-600
-      text-indigo-600 text-indigo-700
-      border-indigo-100
-      shadow-indigo-200
-      dark:bg-indigo-900/30
-      dark:text-indigo-300
-      dark:border-indigo-700/50
-
-      /* Red */
-      bg-red-50 bg-red-100 bg-red-500 bg-red-600
-      text-red-500 text-red-600 text-red-700
-      border-red-100 border-red-200
-      shadow-red-200
-      dark:bg-red-900/30
-      dark:text-red-300
-      dark:border-red-700/50
-
-      /* Violet */
-      bg-violet-50 bg-violet-100 bg-violet-600 bg-violet-700
-      text-violet-600 text-violet-700
-      border-violet-100
-      shadow-violet-200
-      dark:bg-violet-900/30
-      dark:text-violet-300
-      dark:border-violet-700/50
-
-      /* Amber */
-      bg-amber-50
-      text-amber-500 text-amber-700
-      border-amber-100
-      dark:bg-amber-900/30
-      dark:text-amber-300
-      dark:border-amber-700/50
-
-      /* Emerald */
-      bg-emerald-50
-      text-emerald-500 text-emerald-700
-      border-emerald-100
-      dark:bg-emerald-900/30
-      dark:text-emerald-300
-      dark:border-emerald-700/50
-
-      /* Gray */
-      bg-gray-100
-      text-gray-500 text-gray-800
-      border-gray-200
-      dark:bg-gray-700/50
-      dark:text-gray-300
-      dark:border-gray-600;
-  }
+         shadow-lg shadow-violet-200;
 }
 
 /* ─────────────────────────────
@@ -184,15 +112,15 @@ body {
 @keyframes fade {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
+    transform: scale(0.98);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
 .animate-fade {
-  animation: fade 0.4s ease-out;
+  animation: fade 0.6s ease-in-out;
 }
