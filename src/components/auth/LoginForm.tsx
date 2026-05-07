@@ -117,7 +117,7 @@ export default function LoginForm() {
 
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white tracking-tight">
-              EduBroadcast
+              PulseBoard
             </h1>
 
             <p className="text-green-300/70 text-sm mt-0.5">
