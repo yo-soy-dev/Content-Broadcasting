@@ -30,6 +30,10 @@ const contentSchema = new mongoose.Schema(
       enum: ['jpg', 'jpeg', 'png', 'gif'],
       required: true,
     },
+    fileSize: {
+      type: Number,
+      default: 0,
+    },
     startTime: {
       type: Date,
       required: [true, 'Start time is required'],
