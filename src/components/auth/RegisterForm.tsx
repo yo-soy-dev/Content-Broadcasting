@@ -140,7 +140,7 @@ export default function RegisterForm() {
               <input
                 {...register('name')}
                 type="text"
-                placeholder="Rajesh Kumar"
+                placeholder="Devansh Tiwari"
                 className={inputCls(!!errors.name)}
               />
 
