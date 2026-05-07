@@ -137,18 +137,4 @@ export default function ContentFilters({
 
     </div>
   );
-}                className={`px-3 py-1.5 text-xs rounded-full font-medium transition
-                  ${isActive
-                    ? "bg-red-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
 }
