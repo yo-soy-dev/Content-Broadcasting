@@ -261,7 +261,7 @@ export default function LivePage() {
             </p>
 
             <p className="text-white/30 text-[11px] mt-1">
-              EduBroadcast System
+              PulseBoard System
             </p>
           </div>
         </div>
