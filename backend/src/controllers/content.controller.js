@@ -51,6 +51,7 @@ export const uploadContent = asyncHandler(async (req, res) => {
   fileUrl: result.secure_url,
   filePublicId: result.public_id,
   fileType: fileExt,
+  fileSize: req.file.size,
   startTime: new Date(startTime),
   endTime: new Date(endTime),
   rotationDuration: rotationDuration ? Number(rotationDuration) : 30,
