@@ -27,7 +27,7 @@ export default function Navbar() {
         <span className={`w-2 h-2 rounded-full shrink-0
           ${isTeacher ? "bg-indigo-500" : "bg-red-500"}`} />
         <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
-          Content Broadcasting
+          PulseBoard
         </h1>
       </div>
 
