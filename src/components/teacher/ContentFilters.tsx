@@ -96,13 +96,13 @@ export default function ContentFilters({
 
           {activeStatus !== "all" && (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5
-              bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300
-              border border-red-100 dark:border-red-800
+              bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300
+              border border-indigo-100 dark:border-indigo-800
               rounded-full text-xs font-medium">
               {activeStatus}
               <button
                 onClick={() => setActiveStatus("all")}
-                className="hover:text-red-800 transition ml-0.5"
+                className="hover:text-indigo-800 transition ml-0.5"
               >
                 <X size={10} />
               </button>
