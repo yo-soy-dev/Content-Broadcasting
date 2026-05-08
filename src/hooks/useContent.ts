@@ -61,11 +61,11 @@ export const useDeleteContent = () => {
   });
 };
 
-export const useLiveContent = (screenId: string) => {
+export const useLiveContent = (screenName: string) => {
   return useQuery({
-    queryKey: ['liveContent', screenId],
-    queryFn: () => getLiveContent(screenId),
-    enabled: !!screenId,
+    queryKey: ['liveContent', screenName],
+    queryFn: () => getLiveContent(screenName),
+    enabled: !!screenName,
     refetchInterval: 30000,
     select: (res) => res.data,
   });
