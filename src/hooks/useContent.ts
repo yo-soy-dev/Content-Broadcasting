@@ -67,6 +67,6 @@ export const useLiveContent = (screenName: string) => {
     queryFn: () => getLiveContent(screenName),
     enabled: !!screenName,
     refetchInterval: 30000,
-    select: (res) => res.data,
+    select: (res) => res.data.data,
   });
 };
