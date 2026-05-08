@@ -233,6 +233,41 @@ NEXT_PUBLIC_API_URL=https://your-backend.onrender.com/api
 
 ---
 
+## Assumptions
+
+* Each content item is assigned to a single screen at a time.
+* Teachers can only manage content uploaded by themselves.
+* Principals are the only role allowed to approve/reject content.
+* Public live screens do not require authentication.
+* Internet connection is available for Cloudinary media delivery and live polling updates.
+* Scheduling uses server time consistency (UTC/local deployment timezone assumption).
+
+---
+
+## Limitations
+
+* No real-time WebSocket updates — live screens refresh every 30 seconds using polling.
+* No multi-school or multi-tenant support currently.
+* No email or push notifications for approval/rejection events.
+* Uploaded media is limited to image-based content only.
+* Role permissions are hardcoded for Teacher and Principal roles.
+* No automated content expiration cleanup job yet.
+* JWT authentication does not currently support refresh tokens.
+
+---
+
+## Future Improvements
+
+* Add WebSocket support for real-time broadcasting.
+* Add video/PDF support for content uploads.
+* Implement RBAC with customizable permissions.
+* Add analytics dashboard for screen engagement.
+* Add notification system (email/in-app).
+* Add Docker support and CI/CD pipelines.
+* Add unit/integration testing coverage.
+
+---
+
 ## Author
 
 **Devansh Tiwari** — Full Stack Developer (MERN + PERN + Next.js)
