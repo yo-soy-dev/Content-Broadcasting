@@ -146,7 +146,7 @@ src/
 ├── components/
 │   ├── auth/         # AuthGuard, LoginForm, RegisterForm
 │   ├── teacher/      # TeacherStats, UploadForm, ContentTable, ContentFilters
-│   ├── principal/    # PrincipalStats, ApprovalTable, RejectModal, ContentPreviewModal
+│   ├── principal/    # PrincipalStats, ApprovalTable, RejectModal, ContentPreviewModal,ContentFilters
 │   ├── shared/       # EmptyState, ErrorState, StatusBadge, FilePreview
 │   ├── layout/       # Navbar, Sidebar
 │   └── ui/           # Skeleton, Button, Badge, Toast
