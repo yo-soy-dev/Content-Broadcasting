@@ -1,84 +1,177 @@
-FRONTEND NOTES — EduBroadcast Content Broadcasting System
+FRONTEND NOTES — Pulseboard Content Broadcasting System
 ==========================================================
 
 1. PROJECT STRUCTURE
 --------------------
 The project follows a feature-based folder structure:
 
-- app/          → Next.js App Router pages grouped by role
-                  (auth), (teacher), (principal), live/[teacherId]
-- components/   → Divided by role: teacher/, principal/, shared/, layout/, ui/
-- services/     → All API calls go through service layer only
-- hooks/        → Custom hooks wrap services and manage loading/error/data state
-- context/      → AuthContext handles global user state and token
-- types/        → TypeScript interfaces for Content and User
-- constants/    → Static data like SCREEN_OPTIONS and SUBJECTS (hardcoded)
-- utils/        → Pure helper functions (no API calls)
-- lib/          → axios instance and React Query client config
+src/
+├── app/          → Next.js App Router pages grouped by role
+│                   (auth), (teacher), (principal), live/[screenId]
+├── components/   → Divided by role: teacher/, principal/, shared/, layout/, ui/
+├── services/     → All API calls go through service layer only
+├── hooks/        → Custom hooks wrap services, manage loading/error/data state
+├── context/      → AuthContext handles global user state and token
+├── types/        → TypeScript interfaces for Content and User
+├── constants/    → Static data like SCREEN_OPTIONS and SUBJECTS (hardcoded)
+├── utils/        → Pure helper functions — no API calls allowed here
+└── lib/          → axios instance and React Query client config
+
+Reason for this structure:
+- Clear separation of concerns — each folder has one responsibility
+- Easy to scale — add new features without touching existing code
+- Evaluator can trace any data flow: page → hook → service → axios → API
+
 
 2. AUTHENTICATION FLOW
 ----------------------
-- User submits login form → authService.login() is called
-- JWT token received → stored in localStorage
-- axios interceptor attaches token to every request automatically
-- On 401 response → token cleared → user redirected to /login
-- AuthContext calls getMe() on mount to rehydrate session
-- AuthGuard component protects all role-based routes
+1. User submits login form → authService.login() is called
+2. JWT token received → stored in localStorage
+3. axios interceptor attaches token to every outgoing request automatically
+4. On 401 response → token cleared → user redirected to /login
+5. On app mount → AuthContext calls getMe() to rehydrate session
+6. AuthGuard component protects all role-based routes
+7. If role mismatch → redirected to correct dashboard
+
 
 3. ROLE-BASED ROUTING
 ---------------------
-- After login, user role is checked from API response
-- Teacher → redirected to /teacher/dashboard
+- After login, user role is read from API response
+- Teacher   → redirected to /teacher/dashboard
 - Principal → redirected to /principal/dashboard
-- AuthGuard checks allowedRoles prop and redirects if mismatch
-- Public route /live/:teacherId requires no authentication
 - Route groups (teacher) and (principal) have separate layouts
+- Each layout wraps AuthGuard with allowedRoles prop
+- AuthGuard checks role and redirects if mismatch
+- Public route /live/:screenId requires no authentication at all
+
 
 4. API INTEGRATION APPROACH
 ---------------------------
-- All API calls go through services/ folder only
-  - auth.service.ts     → login, logout, getMe
-  - content.service.ts  → upload, getAll, getMyContent, getLiveContent
-  - approval.service.ts → getPending, approve, reject, getStats
-- Components NEVER call axios directly
-- axios instance in lib/axios.ts handles:
-  - Base URL from environment variable
+All API calls go through services/ folder ONLY:
+
+  auth.service.ts     → login(), logout(), getMe()
+  content.service.ts  → upload(), getMyContent(), getLiveContent(), deleteContent()
+  approval.service.ts → getPending(), getAllContent(), approve(), reject(), getStats()
+
+Components NEVER call axios directly — this is enforced by architecture.
+
+axios instance (lib/axios.ts) handles:
+  - Base URL from NEXT_PUBLIC_API_URL environment variable
   - Token attachment via request interceptor
   - 401 auto-logout via response interceptor
+  - 10 second timeout for slow responses
 
-5. STATE MANAGEMENT
--------------------
-- React Query (TanStack Query) for server state
-  - Automatic caching, background refetch, loading/error states
-- AuthContext for global user/token state
-- Local useState for UI state (filters, search, modal open/close)
-- No Redux or Zustand used — React Query handles all async state
+This design makes the API layer easily replaceable — swap the base URL
+and the entire frontend works with a different backend.
 
-6. SCREEN SELECTION
--------------------
-- Screen options are hardcoded in constants/formOptions.ts
-- Reason: screens are fixed physical displays in a school
-  They do not change at runtime, so a static list is the
-  correct and simplest approach (no extra API needed)
-- SCREEN_OPTIONS array is shared across UploadForm and HomePage
 
-7. ASSUMPTIONS
---------------
-- JWT token stored in localStorage (acceptable for this scope)
-- File uploads limited to JPG, PNG, GIF — max 10MB
-- Cloudinary used for file storage (not local disk)
-- Screen is a string field on Content model (not a separate collection)
-- Subjects are static (Mathematics, Science, English, etc.)
-- Live page polls via React Query refetchInterval (no WebSocket)
-- Content is "active" if: status=approved AND now is between startTime and endTime
+5. STATE MANAGEMENT APPROACH
+-----------------------------
+Three layers of state:
+
+  a) Server State → React Query (TanStack Query)
+     - Automatic caching, background refetch, loading/error states
+     - useQuery for fetching, useMutation for create/update/delete
+     - Cache invalidation after mutations keeps UI in sync
+
+  b) Global Auth State → AuthContext
+     - Stores user object, token, isLoading, isAuthenticated
+     - Rehydrates from localStorage on mount via getMe()
+
+  c) Local UI State → useState
+     - Search input, filter status, modal open/close, pagination page
+     - Kept minimal — only what is needed per component
+
+No Redux or Zustand — React Query handles all async state,
+AuthContext handles auth, useState handles UI. This is the minimal
+and correct approach for this application size.
+
+
+6. FORM HANDLING & VALIDATION
+------------------------------
+- React Hook Form for form state management (no unnecessary re-renders)
+- Zod schemas for validation (loginSchema, uploadSchema in utils/validators.ts)
+- Validation rules:
+    - Title: required
+    - Subject: required
+    - File: JPG/PNG/GIF only, max 10MB
+    - Start time: required
+    - End time: required, must be after start time
+    - Screen: required
+- File validated before upload — invalid files never reach the API
+- Upload progress shown via loading spinner on submit button
+
+
+7. SCREEN SELECTION — DESIGN DECISION
+---------------------------------------
+Screen options are hardcoded in constants/formOptions.ts.
+
+Reason: Screens are fixed physical displays in a school building.
+They do not change at runtime. Creating a separate Screen model,
+API endpoint, and database collection for static data is
+over-engineering. A constants file is the correct and simplest
+approach. This also avoids an extra API call on every form load.
+
+SCREEN_OPTIONS array is shared across UploadForm and HomePage.
+
+
+8. PERFORMANCE CONSIDERATIONS
+------------------------------
+- React Query caching prevents unnecessary duplicate API calls
+- Skeleton loaders shown during data fetch (not blank screens)
+- Debounced search input (400ms) reduces API calls while typing
+- Pagination on All Content page — backend returns 20 items per page
+- Images use fixed dimensions (object-cover) to prevent layout shift
+- Mobile responsive: card layout on small screens, table on desktop
+- No unnecessary re-renders — React Query manages server state outside React
+
+
+9. EDGE CASES HANDLED
+----------------------
+- Empty data          → EmptyState component with message
+- API errors          → ErrorState component with retry button
+- Slow responses      → Skeleton loaders, button disabled during submit
+- Invalid login       → Inline error message + toast notification
+- Upload failure      → Toast error, form stays filled
+- Invalid file type   → Client-side validation before API call
+- Invalid file size   → Client-side validation before API call
+- 401 unauthorized    → Auto-redirect to login via axios interceptor
+- Broken API response → Optional chaining used everywhere (data?.field)
+- Empty content list  → "No content uploaded yet" with CTA button
+- No live content     → "No Live Content" screen with animated dots
+- Network error       → Error screen with refresh button (live page)
+
+
+10. ASSUMPTIONS
+---------------
+- JWT token stored in localStorage (acceptable for this assignment scope)
+- File uploads limited to JPG, PNG, GIF — max 10MB (as per requirements)
+- Cloudinary used for file storage — not local disk
+- Screen is a String field on Content model (not a separate collection)
+- Subjects are static (Mathematics, Science, English, Hindi, etc.)
+- Live page auto-refreshes via React Query refetchInterval (30 seconds)
+- Content is "active" if: status=approved AND now >= startTime AND now <= endTime
 - Only pending content can be deleted by teacher
 - Only pending content can be approved/rejected by principal
+- TypeScript used instead of JavaScript for better type safety
+- Dark mode implemented via next-themes (system default)
 
-8. PERFORMANCE
---------------
-- React Query caching prevents unnecessary API calls
-- Skeleton loaders shown during data fetch
-- Images use object-cover with fixed dimensions to prevent layout shift
-- Debounced search input (400ms) to reduce API calls
-- Pagination supported on backend (page + limit params)
-- Mobile-responsive: card layout on small screens, table on desktop
+
+11. BONUS FEATURES IMPLEMENTED
+--------------------------------
+- React Query (TanStack Query) for server state
+- Drag-and-drop file upload with preview
+- Auto-refresh polling on live page (every 30 seconds)
+- Skeleton loaders on all data-loading screens
+- Protected routes with AuthGuard component
+- Toast notifications via react-hot-toast
+- Mobile responsive layouts (card + table)
+- Dark mode support via next-themes
+- Pagination on All Content page
+- Active filter indicators with individual clear buttons
+- Full image preview modal on principal approval table
+- Progress bar on live broadcast page
+- Scheduled / Active / Expired schedule status indicators
+- Role-based sidebar themes (Teacher=Indigo, Principal=Red, Student=Teal)
+
+==========================================================
