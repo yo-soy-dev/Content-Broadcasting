@@ -192,7 +192,7 @@ export default function LivePage() {
    //(Array.isArray(data) ? data : []).filter((item: Content) =>
       //isContentActive(item.startTime, item.endTime)
     //);
-  const contentList = Array.isArray(data?.data) ? data.data : [];
+  const contentList = Array.isArray(data) ? data : [];
 
   const activeContent: Content[] = contentList.filter(
     (item: Content) =>
