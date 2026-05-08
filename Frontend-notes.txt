@@ -3,175 +3,221 @@ FRONTEND NOTES — Pulseboard Content Broadcasting System
 
 1. PROJECT STRUCTURE
 --------------------
-The project follows a feature-based folder structure:
+Feature-based folder structure with strict separation of concerns:
 
 src/
 ├── app/          → Next.js App Router pages grouped by role
-│                   (auth), (teacher), (principal), live/[screenId]
+│                   auth/login, auth/register
+│                   teacher/dashboard, teacher/upload, teacher/my-content
+│                   principal/dashboard, principal/approvals, principal/all-content
+│                   live/[screenId]  ← public, no auth required
 ├── components/   → Divided by role: teacher/, principal/, shared/, layout/, ui/
-├── services/     → All API calls go through service layer only
-├── hooks/        → Custom hooks wrap services, manage loading/error/data state
-├── context/      → AuthContext handles global user state and token
+├── services/     → ALL API calls go through here only (enforced by architecture)
+├── hooks/        → Custom hooks wrap services, expose loading/error/data state
+├── context/      → AuthContext — global user state and JWT token
 ├── types/        → TypeScript interfaces for Content and User
-├── constants/    → Static data like SCREEN_OPTIONS and SUBJECTS (hardcoded)
-├── utils/        → Pure helper functions — no API calls allowed here
-└── lib/          → axios instance and React Query client config
+├── constants/    → Static data — SCREEN_OPTIONS, SUBJECTS (no API call needed)
+├── utils/        → Pure helper functions — dateHelpers, validators, statusHelpers
+└── lib/          → axios instance config + React Query client
 
-Reason for this structure:
-- Clear separation of concerns — each folder has one responsibility
-- Easy to scale — add new features without touching existing code
+Why this structure:
+- Single responsibility per folder — easy to find and change code
+- Components stay thin — no API logic, no token logic
 - Evaluator can trace any data flow: page → hook → service → axios → API
+- Scalable — add new features without modifying existing ones
 
 
 2. AUTHENTICATION FLOW
 ----------------------
-1. User submits login form → authService.login() is called
-2. JWT token received → stored in localStorage
-3. axios interceptor attaches token to every outgoing request automatically
-4. On 401 response → token cleared → user redirected to /login
-5. On app mount → AuthContext calls getMe() to rehydrate session
-6. AuthGuard component protects all role-based routes
-7. If role mismatch → redirected to correct dashboard
+Step-by-step:
+
+1. User submits LoginForm → useAuth hook → authService.login() called
+2. API returns { token, user } → token saved to localStorage
+3. user object saved to AuthContext state
+4. axios interceptor auto-attaches token to every subsequent request
+5. On 401 response → interceptor clears token → redirects to /auth/login
+6. On page refresh → AuthContext mounts → calls authService.getMe()
+   → rehydrates user from token (session persists across refresh)
+7. AuthGuard wraps all protected pages → checks isAuthenticated + role
+
+Token storage: localStorage (acceptable for assignment scope)
+Session persistence: getMe() on every app mount
 
 
 3. ROLE-BASED ROUTING
 ---------------------
-- After login, user role is read from API response
-- Teacher   → redirected to /teacher/dashboard
-- Principal → redirected to /principal/dashboard
-- Route groups (teacher) and (principal) have separate layouts
-- Each layout wraps AuthGuard with allowedRoles prop
-- AuthGuard checks role and redirects if mismatch
-- Public route /live/:screenId requires no authentication at all
+Flow after login:
+- loggedInUser.role === 'teacher'   → router.push('/teacher/dashboard')
+- loggedInUser.role === 'principal' → router.push('/principal/dashboard')
+
+Protection:
+- src/app/teacher/layout.tsx   → AuthGuard allowedRoles={['teacher']}
+- src/app/principal/layout.tsx → AuthGuard allowedRoles={['principal']}
+
+AuthGuard behavior:
+- Not authenticated         → redirect to /auth/login
+- Wrong role (e.g. teacher visiting /principal) → redirect to own dashboard
+- Loading state             → show branded spinner (not blank screen)
+
+Public routes (no AuthGuard):
+- /auth/login, /auth/register
+- /live/[screenId]          → students visit directly, zero authentication
 
 
 4. API INTEGRATION APPROACH
 ---------------------------
-All API calls go through services/ folder ONLY:
+All API calls are isolated in services/ folder:
 
-  auth.service.ts     → login(), logout(), getMe()
-  content.service.ts  → upload(), getMyContent(), getLiveContent(), deleteContent()
-  approval.service.ts → getPending(), getAllContent(), approve(), reject(), getStats()
+  auth.service.ts     → login(), register(), getMe(), logout()
+  content.service.ts  → upload(), getMyContent(), getStats(), deleteContent()
+  approval.service.ts → getPending(), getAllContent(), approve(), reject()
 
-Components NEVER call axios directly — this is enforced by architecture.
+Rules enforced:
+  ❌ No axios calls inside components
+  ❌ No axios calls inside hooks directly (hooks call services)
+  ✅ Components call hooks only
+  ✅ Hooks call services only
+  ✅ Services call axios only
 
-axios instance (lib/axios.ts) handles:
-  - Base URL from NEXT_PUBLIC_API_URL environment variable
-  - Token attachment via request interceptor
-  - 401 auto-logout via response interceptor
-  - 10 second timeout for slow responses
-
-This design makes the API layer easily replaceable — swap the base URL
-and the entire frontend works with a different backend.
+axios instance (lib/axios.ts):
+  - baseURL from NEXT_PUBLIC_API_URL environment variable
+  - Request interceptor: attaches Bearer token from localStorage
+  - Response interceptor: catches 401 → clears token → redirects to login
+  - 10s timeout: prevents UI hanging on slow responses
+  - Easily replaceable: change NEXT_PUBLIC_API_URL → entire app uses new backend
 
 
-5. STATE MANAGEMENT APPROACH
------------------------------
-Three layers of state:
+5. STATE MANAGEMENT
+-------------------
+Three clean layers, no Redux needed:
 
-  a) Server State → React Query (TanStack Query)
-     - Automatic caching, background refetch, loading/error states
-     - useQuery for fetching, useMutation for create/update/delete
-     - Cache invalidation after mutations keeps UI in sync
+  a) Server State → TanStack Query (React Query)
+     - useQuery  → fetch and cache data (content lists, stats)
+     - useMutation → create/update/delete with onSuccess cache invalidation
+     - Automatic background refetch keeps UI fresh
+     - staleTime configured to reduce unnecessary requests
 
-  b) Global Auth State → AuthContext
-     - Stores user object, token, isLoading, isAuthenticated
-     - Rehydrates from localStorage on mount via getMe()
+  b) Global Auth State → AuthContext (React Context)
+     - Stores: user, token, isLoading, isAuthenticated
+     - Single source of truth for auth across all components
+     - Rehydrates on mount via getMe()
 
   c) Local UI State → useState
-     - Search input, filter status, modal open/close, pagination page
-     - Kept minimal — only what is needed per component
+     - Search input value, active filter status, modal open/close, page number
+     - Kept minimal — only per-component transient state
 
-No Redux or Zustand — React Query handles all async state,
-AuthContext handles auth, useState handles UI. This is the minimal
-and correct approach for this application size.
+Decision: No Redux, no Zustand.
+React Query handles all async server state.
+AuthContext handles the only global client state needed.
+This is the correct minimal approach for this application size.
 
 
 6. FORM HANDLING & VALIDATION
 ------------------------------
-- React Hook Form for form state management (no unnecessary re-renders)
-- Zod schemas for validation (loginSchema, uploadSchema in utils/validators.ts)
-- Validation rules:
-    - Title: required
-    - Subject: required
-    - File: JPG/PNG/GIF only, max 10MB
-    - Start time: required
-    - End time: required, must be after start time
-    - Screen: required
-- File validated before upload — invalid files never reach the API
-- Upload progress shown via loading spinner on submit button
+Libraries: React Hook Form + Zod
+
+Validation schemas in utils/validators.ts:
+
+  loginSchema:
+    - email: required, valid email format
+    - password: required, min 6 characters
+
+  uploadSchema:
+    - title: required
+    - subject: required (from SUBJECTS constant)
+    - file: JPG/PNG/GIF only, max 10MB (client-side before API call)
+    - startTime: required
+    - endTime: required, must be strictly after startTime (Zod .refine())
+    - screen: required
+
+File validation happens in handleFile() before form submission.
+Invalid files never reach the network.
+File preview shown before upload via URL.createObjectURL().
+Submit button disabled and shows spinner during upload.
 
 
 7. SCREEN SELECTION — DESIGN DECISION
 ---------------------------------------
-Screen options are hardcoded in constants/formOptions.ts.
+Screens are hardcoded in constants/formOptions.ts as SCREEN_OPTIONS array.
 
-Reason: Screens are fixed physical displays in a school building.
-They do not change at runtime. Creating a separate Screen model,
-API endpoint, and database collection for static data is
-over-engineering. A constants file is the correct and simplest
-approach. This also avoids an extra API call on every form load.
+Reason:
+Screens represent fixed physical display monitors in school building rooms.
+They do not change dynamically at runtime.
+Creating a separate Screen collection, API endpoint, controller, and route
+for completely static data is over-engineering.
 
-SCREEN_OPTIONS array is shared across UploadForm and HomePage.
+A constants file is simpler, faster, and correct for this use case.
+Also avoids an extra API call on every UploadForm load.
+
+If screens need to be dynamic in future → replace constant with useScreens() hook.
+The change would be isolated to UploadForm only.
 
 
-8. PERFORMANCE CONSIDERATIONS
-------------------------------
-- React Query caching prevents unnecessary duplicate API calls
-- Skeleton loaders shown during data fetch (not blank screens)
-- Debounced search input (400ms) reduces API calls while typing
-- Pagination on All Content page — backend returns 20 items per page
-- Images use fixed dimensions (object-cover) to prevent layout shift
-- Mobile responsive: card layout on small screens, table on desktop
-- No unnecessary re-renders — React Query manages server state outside React
+8. PERFORMANCE
+--------------
+- React Query caching: identical queries return cached data instantly
+- Debounced search (400ms): API called only after user stops typing
+- Skeleton loaders: shown during fetch — no blank/jumping screens
+- Pagination: All Content page loads 10 items at a time (not all 1000+)
+- Fixed image dimensions with object-cover: prevents layout shift
+- useMemo/useCallback: used where re-render cost is measurable
+- Mobile card layout: avoids rendering large tables on small screens
+- React Query staleTime: reduces background refetch frequency
 
 
 9. EDGE CASES HANDLED
 ----------------------
-- Empty data          → EmptyState component with message
-- API errors          → ErrorState component with retry button
-- Slow responses      → Skeleton loaders, button disabled during submit
-- Invalid login       → Inline error message + toast notification
-- Upload failure      → Toast error, form stays filled
-- Invalid file type   → Client-side validation before API call
-- Invalid file size   → Client-side validation before API call
-- 401 unauthorized    → Auto-redirect to login via axios interceptor
-- Broken API response → Optional chaining used everywhere (data?.field)
-- Empty content list  → "No content uploaded yet" with CTA button
-- No live content     → "No Live Content" screen with animated dots
-- Network error       → Error screen with refresh button (live page)
+Scenario                     → Handling
+─────────────────────────────────────────────────────────
+Empty content list           → EmptyState component with icon + CTA
+API fetch error              → ErrorState with message + retry button
+Slow API response            → Skeleton loaders, buttons disabled on submit
+Invalid login credentials    → Inline error message below form
+Upload failure               → Toast error, form stays filled (not reset)
+Invalid file type            → Client validation rejects before API call
+File too large (>10MB)       → Client validation rejects before API call
+401 Unauthorized response    → Auto-logout + redirect via axios interceptor
+Broken/missing API fields    → Optional chaining everywhere (data?.field ?? fallback)
+No live content available    → "No content broadcasting right now" empty state
+Network error on live page   → Error screen with refresh button
+Teacher visits /principal    → AuthGuard redirects to /teacher/dashboard
+Principal visits /teacher    → AuthGuard redirects to /principal/dashboard
+Unauthenticated page visit   → AuthGuard redirects to /auth/login
+Invalid teacherId in URL     → Backend validates ObjectId format, returns []
 
 
 10. ASSUMPTIONS
 ---------------
-- JWT token stored in localStorage (acceptable for this assignment scope)
-- File uploads limited to JPG, PNG, GIF — max 10MB (as per requirements)
+- JWT stored in localStorage (acceptable scope for this assignment)
+- File types: JPG, PNG, GIF only — max 10MB (per assignment spec)
 - Cloudinary used for file storage — not local disk
-- Screen is a String field on Content model (not a separate collection)
-- Subjects are static (Mathematics, Science, English, Hindi, etc.)
-- Live page auto-refreshes via React Query refetchInterval (30 seconds)
-- Content is "active" if: status=approved AND now >= startTime AND now <= endTime
-- Only pending content can be deleted by teacher
-- Only pending content can be approved/rejected by principal
-- TypeScript used instead of JavaScript for better type safety
-- Dark mode implemented via next-themes (system default)
+- Screen is a String field on Content model — not a separate DB collection
+- Subjects list is static — not fetched from API
+- Live page polls every 30 seconds via React Query refetchInterval
+- Content is "active" when: status=approved AND startTime <= now <= endTime
+- Only pending content can be deleted (by teacher)
+- Only pending content can be approved or rejected (by principal)
+- TypeScript used instead of plain JavaScript — better DX, safer code
+- Dark mode implemented via Tailwind dark: classes + next-themes
 
 
 11. BONUS FEATURES IMPLEMENTED
 --------------------------------
-- React Query (TanStack Query) for server state
-- Drag-and-drop file upload with preview
-- Auto-refresh polling on live page (every 30 seconds)
-- Skeleton loaders on all data-loading screens
-- Protected routes with AuthGuard component
-- Toast notifications via react-hot-toast
-- Mobile responsive layouts (card + table)
-- Dark mode support via next-themes
-- Pagination on All Content page
-- Active filter indicators with individual clear buttons
-- Full image preview modal on principal approval table
-- Progress bar on live broadcast page
-- Scheduled / Active / Expired schedule status indicators
-- Role-based sidebar themes (Teacher=Indigo, Principal=Red, Student=Teal)
+Feature                             Implementation
+─────────────────────────────────────────────────────────
+TanStack Query                      → All server state, caching, mutations
+Drag-and-drop upload                → onDrop handler with visual feedback
+Auto-refresh on live page           → refetchInterval: 30000 in useQuery
+Skeleton loaders                    → All data-loading screens
+Protected routes                    → AuthGuard component with role check
+Toast notifications                 → react-hot-toast on success/error
+Mobile responsive                   → Card layout (mobile) + Table (desktop)
+Dark mode                           → next-themes + Tailwind dark: classes
+Pagination                          → All Content page, 10 items/page
+Active filter indicators            → Tags with individual X clear buttons
+Image preview modal                 → ContentPreviewModal on ApprovalTable
+Progress bar on live page           → Based on startTime/endTime duration
+Schedule status indicators          → Active / Scheduled / Expired badges
+Quick reject reasons                → Chip buttons in RejectModal
 
 ==========================================================
