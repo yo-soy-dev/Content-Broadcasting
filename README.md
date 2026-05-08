@@ -1,4 +1,4 @@
-# EduBroadcast — Content Broadcasting System
+# PulseBoard — Content Broadcasting System
 
 A role-based content broadcasting platform for educational institutions.  
 Teachers upload content → Principals approve it → Students view it live on public screens.
