@@ -1,4 +1,4 @@
-FRONTEND NOTES — Pulseboard Content Broadcasting System
+FRONTEND NOTES — PulseBoard Content Broadcasting System
 ==========================================================
 
 1. PROJECT STRUCTURE
