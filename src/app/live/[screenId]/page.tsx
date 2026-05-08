@@ -188,10 +188,16 @@ export default function LivePage() {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
-  const activeContent: Content[] =
-    (Array.isArray(data) ? data : []).filter((item: Content) =>
+  //const activeContent: Content[] =
+   //(Array.isArray(data) ? data : []).filter((item: Content) =>
+      //isContentActive(item.startTime, item.endTime)
+    //);
+  const contentList = Array.isArray(data?.data) ? data.data : [];
+
+  const activeContent: Content[] = contentList.filter(
+    (item: Content) =>
       isContentActive(item.startTime, item.endTime)
-    );
+  );
 
   const duration = (activeContent[index]?.rotationDuration ?? 10) * 1000;
 
