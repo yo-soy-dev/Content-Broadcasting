@@ -52,8 +52,8 @@ export default function ContentFilters({
               bg-gray-50 dark:bg-gray-700
               text-sm text-gray-900 dark:text-gray-100
               placeholder:text-gray-400 dark:placeholder:text-gray-500
-              outline-none focus:ring-2 focus:ring-red-400/30
-              focus:border-red-300 transition"
+              outline-none focus:ring-2 focus:ring-indigo-400/30
+              focus:border-indigo-300 transition"
           />
           {/* Clear search */}
           {search && (
@@ -77,7 +77,7 @@ export default function ContentFilters({
                 onClick={() => setActiveStatus(status)}
                 className={`px-3 py-1.5 text-xs rounded-full font-medium transition
                   ${isActive
-                    ? "bg-red-600 text-white shadow-sm shadow-red-200"
+                    ? "bg-indigo-600 text-white shadow-sm shadow-red-200"
                     : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
               >
