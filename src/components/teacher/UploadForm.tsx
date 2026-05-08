@@ -103,6 +103,8 @@ export default function UploadForm() {
     formData.append("description", data.description || "");
     //formData.append("startTime", data.startTime);
     //formData.append("endTime", data.endTime);
+    formData.append("startTime", new Date(data.startTime).toISOString());
+    formData.append("endTime", new Date(data.endTime).toISOString());
     formData.append("screen", data.screen);
     formData.append("rotationDuration", String(data.rotationDuration || 10));
     formData.append("file", file);
